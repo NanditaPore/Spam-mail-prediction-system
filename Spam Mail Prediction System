@@ -1,1 +1,1196 @@
-{"metadata":{"kernelspec":{"language":"python","display_name":"Python 3","name":"python3"},"language_info":{"name":"python","version":"3.10.14","mimetype":"text/x-python","codemirror_mode":{"name":"ipython","version":3},"pygments_lexer":"ipython3","nbconvert_exporter":"python","file_extension":".py"},"kaggle":{"accelerator":"none","dataSources":[{"sourceId":10148397,"sourceType":"datasetVersion","datasetId":6264721}],"dockerImageVersionId":30804,"isInternetEnabled":true,"language":"python","sourceType":"notebook","isGpuEnabled":false}},"nbformat_minor":4,"nbformat":4,"cells":[{"cell_type":"markdown","source":"**Importing Dependencies**","metadata":{}},{"cell_type":"code","source":"import numpy as np\nimport pandas as pd\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.feature_extraction.text import TfidfVectorizer\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.metrics import accuracy_score","metadata":{"_uuid":"8f2839f25d086af736a60e9eeb907d3b93b6e0e5","_cell_guid":"b1076dfc-b9ad-4769-8c92-a6c4dae69d19","trusted":true,"execution":{"iopub.status.busy":"2024-12-10T17:31:46.554124Z","iopub.execute_input":"2024-12-10T17:31:46.554568Z","iopub.status.idle":"2024-12-10T17:31:47.854418Z","shell.execute_reply.started":"2024-12-10T17:31:46.554471Z","shell.execute_reply":"2024-12-10T17:31:47.853253Z"}},"outputs":[],"execution_count":1},{"cell_type":"markdown","source":"**Data Collection and Pre-processing**","metadata":{}},{"cell_type":"code","source":"# Loading the data from csv to pandas dataframe\ndata=pd.read_csv('/kaggle/input/mails-dataset-spam-ham/mail_data.csv')","metadata":{"trusted":true,"execution":{"iopub.status.busy":"2024-12-10T17:31:47.856910Z","iopub.execute_input":"2024-12-10T17:31:47.857603Z","iopub.status.idle":"2024-12-10T17:31:47.900844Z","shell.execute_reply.started":"2024-12-10T17:31:47.857549Z","shell.execute_reply":"2024-12-10T17:31:47.899597Z"}},"outputs":[],"execution_count":2},{"cell_type":"code","source":"data","metadata":{"trusted":true,"execution":{"iopub.status.busy":"2024-12-10T17:31:47.902346Z","iopub.execute_input":"2024-12-10T17:31:47.902828Z","iopub.status.idle":"2024-12-10T17:31:47.928396Z","shell.execute_reply.started":"2024-12-10T17:31:47.902782Z","shell.execute_reply":"2024-12-10T17:31:47.927339Z"}},"outputs":[{"execution_count":3,"output_type":"execute_result","data":{"text/plain":"     Category                                            Message\n0         ham  Go until jurong point, crazy.. Available only ...\n1         ham                      Ok lar... Joking wif u oni...\n2        spam  Free entry in 2 a wkly comp to win FA Cup fina...\n3         ham  U dun say so early hor... U c already then say...\n4         ham  Nah I don't think he goes to usf, he lives aro...\n...       ...                                                ...\n5567     spam  This is the 2nd time we have tried 2 contact u...\n5568      ham               Will ü b going to esplanade fr home?\n5569      ham  Pity, * was in mood for that. So...any other s...\n5570      ham  The guy did some bitching but I acted like i'd...\n5571      ham                         Rofl. Its true to its name\n\n[5572 rows x 2 columns]","text/html":"<div>\n<style scoped>\n    .dataframe tbody tr th:only-of-type {\n        vertical-align: middle;\n    }\n\n    .dataframe tbody tr th {\n        vertical-align: top;\n    }\n\n    .dataframe thead th {\n        text-align: right;\n    }\n</style>\n<table border=\"1\" class=\"dataframe\">\n  <thead>\n    <tr style=\"text-align: right;\">\n      <th></th>\n      <th>Category</th>\n      <th>Message</th>\n    </tr>\n  </thead>\n  <tbody>\n    <tr>\n      <th>0</th>\n      <td>ham</td>\n      <td>Go until jurong point, crazy.. Available only ...</td>\n    </tr>\n    <tr>\n      <th>1</th>\n      <td>ham</td>\n      <td>Ok lar... Joking wif u oni...</td>\n    </tr>\n    <tr>\n      <th>2</th>\n      <td>spam</td>\n      <td>Free entry in 2 a wkly comp to win FA Cup fina...</td>\n    </tr>\n    <tr>\n      <th>3</th>\n      <td>ham</td>\n      <td>U dun say so early hor... U c already then say...</td>\n    </tr>\n    <tr>\n      <th>4</th>\n      <td>ham</td>\n      <td>Nah I don't think he goes to usf, he lives aro...</td>\n    </tr>\n    <tr>\n      <th>...</th>\n      <td>...</td>\n      <td>...</td>\n    </tr>\n    <tr>\n      <th>5567</th>\n      <td>spam</td>\n      <td>This is the 2nd time we have tried 2 contact u...</td>\n    </tr>\n    <tr>\n      <th>5568</th>\n      <td>ham</td>\n      <td>Will ü b going to esplanade fr home?</td>\n    </tr>\n    <tr>\n      <th>5569</th>\n      <td>ham</td>\n      <td>Pity, * was in mood for that. So...any other s...</td>\n    </tr>\n    <tr>\n      <th>5570</th>\n      <td>ham</td>\n      <td>The guy did some bitching but I acted like i'd...</td>\n    </tr>\n    <tr>\n      <th>5571</th>\n      <td>ham</td>\n      <td>Rofl. Its true to its name</td>\n    </tr>\n  </tbody>\n</table>\n<p>5572 rows × 2 columns</p>\n</div>"},"metadata":{}}],"execution_count":3},{"cell_type":"code","source":"# Replace the null values with a null string\nmail_data=data.where((pd.notnull(data)),'')","metadata":{"trusted":true,"execution":{"iopub.status.busy":"2024-12-10T17:31:47.930799Z","iopub.execute_input":"2024-12-10T17:31:47.931132Z","iopub.status.idle":"2024-12-10T17:31:47.940084Z","shell.execute_reply.started":"2024-12-10T17:31:47.931100Z","shell.execute_reply":"2024-12-10T17:31:47.938887Z"}},"outputs":[],"execution_count":4},{"cell_type":"code","source":"#Printing the first 5 rows of the dataframe\nmail_data.head()","metadata":{"trusted":true,"execution":{"iopub.status.busy":"2024-12-10T17:31:47.941454Z","iopub.execute_input":"2024-12-10T17:31:47.941836Z","iopub.status.idle":"2024-12-10T17:31:47.958923Z","shell.execute_reply.started":"2024-12-10T17:31:47.941805Z","shell.execute_reply":"2024-12-10T17:31:47.957592Z"}},"outputs":[{"execution_count":5,"output_type":"execute_result","data":{"text/plain":"  Category                                            Message\n0      ham  Go until jurong point, crazy.. Available only ...\n1      ham                      Ok lar... Joking wif u oni...\n2     spam  Free entry in 2 a wkly comp to win FA Cup fina...\n3      ham  U dun say so early hor... U c already then say...\n4      ham  Nah I don't think he goes to usf, he lives aro...","text/html":"<div>\n<style scoped>\n    .dataframe tbody tr th:only-of-type {\n        vertical-align: middle;\n    }\n\n    .dataframe tbody tr th {\n        vertical-align: top;\n    }\n\n    .dataframe thead th {\n        text-align: right;\n    }\n</style>\n<table border=\"1\" class=\"dataframe\">\n  <thead>\n    <tr style=\"text-align: right;\">\n      <th></th>\n      <th>Category</th>\n      <th>Message</th>\n    </tr>\n  </thead>\n  <tbody>\n    <tr>\n      <th>0</th>\n      <td>ham</td>\n      <td>Go until jurong point, crazy.. Available only ...</td>\n    </tr>\n    <tr>\n      <th>1</th>\n      <td>ham</td>\n      <td>Ok lar... Joking wif u oni...</td>\n    </tr>\n    <tr>\n      <th>2</th>\n      <td>spam</td>\n      <td>Free entry in 2 a wkly comp to win FA Cup fina...</td>\n    </tr>\n    <tr>\n      <th>3</th>\n      <td>ham</td>\n      <td>U dun say so early hor... U c already then say...</td>\n    </tr>\n    <tr>\n      <th>4</th>\n      <td>ham</td>\n      <td>Nah I don't think he goes to usf, he lives aro...</td>\n    </tr>\n  </tbody>\n</table>\n</div>"},"metadata":{}}],"execution_count":5},{"cell_type":"code","source":"# Checking the number of rows and columns in the dataframe\nmail_data.shape","metadata":{"trusted":true,"execution":{"iopub.status.busy":"2024-12-10T17:31:47.960357Z","iopub.execute_input":"2024-12-10T17:31:47.960886Z","iopub.status.idle":"2024-12-10T17:31:47.972690Z","shell.execute_reply.started":"2024-12-10T17:31:47.960839Z","shell.execute_reply":"2024-12-10T17:31:47.971483Z"}},"outputs":[{"execution_count":6,"output_type":"execute_result","data":{"text/plain":"(5572, 2)"},"metadata":{}}],"execution_count":6},{"cell_type":"markdown","source":"**Label Encoding**","metadata":{}},{"cell_type":"code","source":"# Label spam mail as 0 ; Ham mail as 1;\nmail_data.loc[mail_data['Category'] == 'spam','Category']= 0\nmail_data.loc[mail_data['Category'] == 'ham', 'Category']= 1","metadata":{"trusted":true,"execution":{"iopub.status.busy":"2024-12-10T17:31:47.974245Z","iopub.execute_input":"2024-12-10T17:31:47.974766Z","iopub.status.idle":"2024-12-10T17:31:47.992180Z","shell.execute_reply.started":"2024-12-10T17:31:47.974718Z","shell.execute_reply":"2024-12-10T17:31:47.990059Z"}},"outputs":[],"execution_count":7},{"cell_type":"code","source":"mail_data.head()","metadata":{"trusted":true,"execution":{"iopub.status.busy":"2024-12-10T17:31:47.995591Z","iopub.execute_input":"2024-12-10T17:31:47.996046Z","iopub.status.idle":"2024-12-10T17:31:48.013198Z","shell.execute_reply.started":"2024-12-10T17:31:47.996003Z","shell.execute_reply":"2024-12-10T17:31:48.011119Z"}},"outputs":[{"execution_count":8,"output_type":"execute_result","data":{"text/plain":"  Category                                            Message\n0        1  Go until jurong point, crazy.. Available only ...\n1        1                      Ok lar... Joking wif u oni...\n2        0  Free entry in 2 a wkly comp to win FA Cup fina...\n3        1  U dun say so early hor... U c already then say...\n4        1  Nah I don't think he goes to usf, he lives aro...","text/html":"<div>\n<style scoped>\n    .dataframe tbody tr th:only-of-type {\n        vertical-align: middle;\n    }\n\n    .dataframe tbody tr th {\n        vertical-align: top;\n    }\n\n    .dataframe thead th {\n        text-align: right;\n    }\n</style>\n<table border=\"1\" class=\"dataframe\">\n  <thead>\n    <tr style=\"text-align: right;\">\n      <th></th>\n      <th>Category</th>\n      <th>Message</th>\n    </tr>\n  </thead>\n  <tbody>\n    <tr>\n      <th>0</th>\n      <td>1</td>\n      <td>Go until jurong point, crazy.. Available only ...</td>\n    </tr>\n    <tr>\n      <th>1</th>\n      <td>1</td>\n      <td>Ok lar... Joking wif u oni...</td>\n    </tr>\n    <tr>\n      <th>2</th>\n      <td>0</td>\n      <td>Free entry in 2 a wkly comp to win FA Cup fina...</td>\n    </tr>\n    <tr>\n      <th>3</th>\n      <td>1</td>\n      <td>U dun say so early hor... U c already then say...</td>\n    </tr>\n    <tr>\n      <th>4</th>\n      <td>1</td>\n      <td>Nah I don't think he goes to usf, he lives aro...</td>\n    </tr>\n  </tbody>\n</table>\n</div>"},"metadata":{}}],"execution_count":8},{"cell_type":"markdown","source":"Spam - 0\n\nHam - 1","metadata":{}},{"cell_type":"code","source":"# Separating the data as texts and labels \nX= mail_data['Message']\nY= mail_data['Category']","metadata":{"trusted":true,"execution":{"iopub.status.busy":"2024-12-10T17:31:48.016709Z","iopub.execute_input":"2024-12-10T17:31:48.017241Z","iopub.status.idle":"2024-12-10T17:31:48.028634Z","shell.execute_reply.started":"2024-12-10T17:31:48.017188Z","shell.execute_reply":"2024-12-10T17:31:48.026793Z"}},"outputs":[],"execution_count":9},{"cell_type":"code","source":"print(X)","metadata":{"trusted":true,"execution":{"iopub.status.busy":"2024-12-10T17:31:48.032931Z","iopub.execute_input":"2024-12-10T17:31:48.033323Z","iopub.status.idle":"2024-12-10T17:31:48.043950Z","shell.execute_reply.started":"2024-12-10T17:31:48.033288Z","shell.execute_reply":"2024-12-10T17:31:48.042124Z"}},"outputs":[{"name":"stdout","text":"0       Go until jurong point, crazy.. Available only ...\n1                           Ok lar... Joking wif u oni...\n2       Free entry in 2 a wkly comp to win FA Cup fina...\n3       U dun say so early hor... U c already then say...\n4       Nah I don't think he goes to usf, he lives aro...\n                              ...                        \n5567    This is the 2nd time we have tried 2 contact u...\n5568                 Will ü b going to esplanade fr home?\n5569    Pity, * was in mood for that. So...any other s...\n5570    The guy did some bitching but I acted like i'd...\n5571                           Rofl. Its true to its name\nName: Message, Length: 5572, dtype: object\n","output_type":"stream"}],"execution_count":10},{"cell_type":"code","source":"print(Y)","metadata":{"trusted":true,"execution":{"iopub.status.busy":"2024-12-10T17:31:48.045464Z","iopub.execute_input":"2024-12-10T17:31:48.045897Z","iopub.status.idle":"2024-12-10T17:31:48.058827Z","shell.execute_reply.started":"2024-12-10T17:31:48.045861Z","shell.execute_reply":"2024-12-10T17:31:48.057615Z"}},"outputs":[{"name":"stdout","text":"0       1\n1       1\n2       0\n3       1\n4       1\n       ..\n5567    0\n5568    1\n5569    1\n5570    1\n5571    1\nName: Category, Length: 5572, dtype: object\n","output_type":"stream"}],"execution_count":11},{"cell_type":"markdown","source":"**Splitting the data into training data and testing data**","metadata":{}},{"cell_type":"code","source":"X_train,X_test,Y_train,Y_test=train_test_split(X, Y,test_size=0.2 , random_state=3)","metadata":{"trusted":true,"execution":{"iopub.status.busy":"2024-12-10T17:31:48.060292Z","iopub.execute_input":"2024-12-10T17:31:48.061415Z","iopub.status.idle":"2024-12-10T17:31:48.077850Z","shell.execute_reply.started":"2024-12-10T17:31:48.061358Z","shell.execute_reply":"2024-12-10T17:31:48.076735Z"}},"outputs":[],"execution_count":12},{"cell_type":"code","source":"print(X.shape)\nprint(X_train.shape)\nprint(X_test.shape)","metadata":{"trusted":true,"execution":{"iopub.status.busy":"2024-12-10T17:31:48.079134Z","iopub.execute_input":"2024-12-10T17:31:48.079443Z","iopub.status.idle":"2024-12-10T17:31:48.093142Z","shell.execute_reply.started":"2024-12-10T17:31:48.079413Z","shell.execute_reply":"2024-12-10T17:31:48.091579Z"}},"outputs":[{"name":"stdout","text":"(5572,)\n(4457,)\n(1115,)\n","output_type":"stream"}],"execution_count":13},{"cell_type":"markdown","source":"**Feature Extraction**","metadata":{}},{"cell_type":"code","source":"# Transform the text data to feature vectors that can be used as an input to the Logistic Regression Model\nfeature_extraction=TfidfVectorizer(min_df = 1, stop_words='english', lowercase=True)\n\nX_train_feature = feature_extraction.fit_transform(X_train)\nX_test_feature = feature_extraction.transform(X_test)\n\n# Convert the Y_train and Y_test values to integers\n\nY_train=Y_train.astype('int')\nY_test=Y_test.astype('int')","metadata":{"trusted":true,"execution":{"iopub.status.busy":"2024-12-10T17:31:48.094326Z","iopub.execute_input":"2024-12-10T17:31:48.094891Z","iopub.status.idle":"2024-12-10T17:31:48.227184Z","shell.execute_reply.started":"2024-12-10T17:31:48.094838Z","shell.execute_reply":"2024-12-10T17:31:48.225943Z"}},"outputs":[],"execution_count":14},{"cell_type":"markdown","source":"**Training the Model**\n\n**Logistic Regression**","metadata":{}},{"cell_type":"code","source":"model=LogisticRegression()","metadata":{"trusted":true,"execution":{"iopub.status.busy":"2024-12-10T17:31:48.228706Z","iopub.execute_input":"2024-12-10T17:31:48.229035Z","iopub.status.idle":"2024-12-10T17:31:48.234488Z","shell.execute_reply.started":"2024-12-10T17:31:48.229003Z","shell.execute_reply":"2024-12-10T17:31:48.233243Z"}},"outputs":[],"execution_count":15},{"cell_type":"code","source":"# Training the Logistic Regression model with the training data \nmodel.fit(X_train_feature,Y_train)","metadata":{"trusted":true,"execution":{"iopub.status.busy":"2024-12-10T17:31:48.236131Z","iopub.execute_input":"2024-12-10T17:31:48.236490Z","iopub.status.idle":"2024-12-10T17:31:48.310794Z","shell.execute_reply.started":"2024-12-10T17:31:48.236457Z","shell.execute_reply":"2024-12-10T17:31:48.309601Z"}},"outputs":[{"execution_count":16,"output_type":"execute_result","data":{"text/plain":"LogisticRegression()","text/html":"<style>#sk-container-id-1 {color: black;background-color: white;}#sk-container-id-1 pre{padding: 0;}#sk-container-id-1 div.sk-toggleable {background-color: white;}#sk-container-id-1 label.sk-toggleable__label {cursor: pointer;display: block;width: 100%;margin-bottom: 0;padding: 0.3em;box-sizing: border-box;text-align: center;}#sk-container-id-1 label.sk-toggleable__label-arrow:before {content: \"▸\";float: left;margin-right: 0.25em;color: #696969;}#sk-container-id-1 label.sk-toggleable__label-arrow:hover:before {color: black;}#sk-container-id-1 div.sk-estimator:hover label.sk-toggleable__label-arrow:before {color: black;}#sk-container-id-1 div.sk-toggleable__content {max-height: 0;max-width: 0;overflow: hidden;text-align: left;background-color: #f0f8ff;}#sk-container-id-1 div.sk-toggleable__content pre {margin: 0.2em;color: black;border-radius: 0.25em;background-color: #f0f8ff;}#sk-container-id-1 input.sk-toggleable__control:checked~div.sk-toggleable__content {max-height: 200px;max-width: 100%;overflow: auto;}#sk-container-id-1 input.sk-toggleable__control:checked~label.sk-toggleable__label-arrow:before {content: \"▾\";}#sk-container-id-1 div.sk-estimator input.sk-toggleable__control:checked~label.sk-toggleable__label {background-color: #d4ebff;}#sk-container-id-1 div.sk-label input.sk-toggleable__control:checked~label.sk-toggleable__label {background-color: #d4ebff;}#sk-container-id-1 input.sk-hidden--visually {border: 0;clip: rect(1px 1px 1px 1px);clip: rect(1px, 1px, 1px, 1px);height: 1px;margin: -1px;overflow: hidden;padding: 0;position: absolute;width: 1px;}#sk-container-id-1 div.sk-estimator {font-family: monospace;background-color: #f0f8ff;border: 1px dotted black;border-radius: 0.25em;box-sizing: border-box;margin-bottom: 0.5em;}#sk-container-id-1 div.sk-estimator:hover {background-color: #d4ebff;}#sk-container-id-1 div.sk-parallel-item::after {content: \"\";width: 100%;border-bottom: 1px solid gray;flex-grow: 1;}#sk-container-id-1 div.sk-label:hover label.sk-toggleable__label {background-color: #d4ebff;}#sk-container-id-1 div.sk-serial::before {content: \"\";position: absolute;border-left: 1px solid gray;box-sizing: border-box;top: 0;bottom: 0;left: 50%;z-index: 0;}#sk-container-id-1 div.sk-serial {display: flex;flex-direction: column;align-items: center;background-color: white;padding-right: 0.2em;padding-left: 0.2em;position: relative;}#sk-container-id-1 div.sk-item {position: relative;z-index: 1;}#sk-container-id-1 div.sk-parallel {display: flex;align-items: stretch;justify-content: center;background-color: white;position: relative;}#sk-container-id-1 div.sk-item::before, #sk-container-id-1 div.sk-parallel-item::before {content: \"\";position: absolute;border-left: 1px solid gray;box-sizing: border-box;top: 0;bottom: 0;left: 50%;z-index: -1;}#sk-container-id-1 div.sk-parallel-item {display: flex;flex-direction: column;z-index: 1;position: relative;background-color: white;}#sk-container-id-1 div.sk-parallel-item:first-child::after {align-self: flex-end;width: 50%;}#sk-container-id-1 div.sk-parallel-item:last-child::after {align-self: flex-start;width: 50%;}#sk-container-id-1 div.sk-parallel-item:only-child::after {width: 0;}#sk-container-id-1 div.sk-dashed-wrapped {border: 1px dashed gray;margin: 0 0.4em 0.5em 0.4em;box-sizing: border-box;padding-bottom: 0.4em;background-color: white;}#sk-container-id-1 div.sk-label label {font-family: monospace;font-weight: bold;display: inline-block;line-height: 1.2em;}#sk-container-id-1 div.sk-label-container {text-align: center;}#sk-container-id-1 div.sk-container {/* jupyter's `normalize.less` sets `[hidden] { display: none; }` but bootstrap.min.css set `[hidden] { display: none !important; }` so we also need the `!important` here to be able to override the default hidden behavior on the sphinx rendered scikit-learn.org. See: https://github.com/scikit-learn/scikit-learn/issues/21755 */display: inline-block !important;position: relative;}#sk-container-id-1 div.sk-text-repr-fallback {display: none;}</style><div id=\"sk-container-id-1\" class=\"sk-top-container\"><div class=\"sk-text-repr-fallback\"><pre>LogisticRegression()</pre><b>In a Jupyter environment, please rerun this cell to show the HTML representation or trust the notebook. <br />On GitHub, the HTML representation is unable to render, please try loading this page with nbviewer.org.</b></div><div class=\"sk-container\" hidden><div class=\"sk-item\"><div class=\"sk-estimator sk-toggleable\"><input class=\"sk-toggleable__control sk-hidden--visually\" id=\"sk-estimator-id-1\" type=\"checkbox\" checked><label for=\"sk-estimator-id-1\" class=\"sk-toggleable__label sk-toggleable__label-arrow\">LogisticRegression</label><div class=\"sk-toggleable__content\"><pre>LogisticRegression()</pre></div></div></div></div></div>"},"metadata":{}}],"execution_count":16},{"cell_type":"markdown","source":"**Evaluating the Trained Model**","metadata":{}},{"cell_type":"code","source":"# Prediction on the training data \nprediction_traindata=model.predict(X_train_feature)\n\naccuracy_traindata=accuracy_score(Y_train,prediction_traindata)","metadata":{"trusted":true,"execution":{"iopub.status.busy":"2024-12-10T17:31:48.312631Z","iopub.execute_input":"2024-12-10T17:31:48.312979Z","iopub.status.idle":"2024-12-10T17:31:48.320750Z","shell.execute_reply.started":"2024-12-10T17:31:48.312948Z","shell.execute_reply":"2024-12-10T17:31:48.319376Z"}},"outputs":[],"execution_count":17},{"cell_type":"code","source":"print(\"Accuracy of the training data \",accuracy_traindata)","metadata":{"trusted":true,"execution":{"iopub.status.busy":"2024-12-10T17:31:48.322393Z","iopub.execute_input":"2024-12-10T17:31:48.322874Z","iopub.status.idle":"2024-12-10T17:31:48.337106Z","shell.execute_reply.started":"2024-12-10T17:31:48.322824Z","shell.execute_reply":"2024-12-10T17:31:48.335681Z"}},"outputs":[{"name":"stdout","text":"Accuracy of the training data  0.9670181736594121\n","output_type":"stream"}],"execution_count":18},{"cell_type":"code","source":"# Prediction on the testing data \nprediction_testdata=model.predict(X_test_feature)\n\naccuracy_testdata=accuracy_score(Y_test,prediction_testdata)","metadata":{"trusted":true,"execution":{"iopub.status.busy":"2024-12-10T17:31:48.338651Z","iopub.execute_input":"2024-12-10T17:31:48.339018Z","iopub.status.idle":"2024-12-10T17:31:48.351600Z","shell.execute_reply.started":"2024-12-10T17:31:48.338972Z","shell.execute_reply":"2024-12-10T17:31:48.350319Z"}},"outputs":[],"execution_count":19},{"cell_type":"code","source":"print(\"Accuracy of the testing data \",accuracy_testdata)","metadata":{"trusted":true,"execution":{"iopub.status.busy":"2024-12-10T17:31:48.353108Z","iopub.execute_input":"2024-12-10T17:31:48.353478Z","iopub.status.idle":"2024-12-10T17:31:48.363248Z","shell.execute_reply.started":"2024-12-10T17:31:48.353436Z","shell.execute_reply":"2024-12-10T17:31:48.362083Z"}},"outputs":[{"name":"stdout","text":"Accuracy of the testing data  0.9659192825112107\n","output_type":"stream"}],"execution_count":20},{"cell_type":"markdown","source":"**Building a Predictive System**","metadata":{}},{"cell_type":"code","source":" input_mail=[\"Free ,offer to win a free gift subscribe it soon to avail the offer\"]\n\n# Convert the text into feature vectors\n\ninput_data_feature=feature_extraction.transform(input_mail)\n\n# Making Predictions\n\nprediction = model.predict(input_data_feature)\nprint(prediction)\n\nif (prediction[0]== 1):\n    print(\"Ham Mail\")\nelse:\n    print(\"Spam Mail\")","metadata":{"trusted":true,"execution":{"iopub.status.busy":"2024-12-10T17:31:48.364772Z","iopub.execute_input":"2024-12-10T17:31:48.365201Z","iopub.status.idle":"2024-12-10T17:31:48.383126Z","shell.execute_reply.started":"2024-12-10T17:31:48.365148Z","shell.execute_reply":"2024-12-10T17:31:48.381915Z"}},"outputs":[{"name":"stdout","text":"[0]\nSpam Mail\n","output_type":"stream"}],"execution_count":21},{"cell_type":"markdown","source":"**Prediction based on user input**\n\n* **Spam :** Free ,offer to win a free gift subscribe it soon to avail the offer\n\n* **Ham:** This is a friendly reminder about our team meeting scheduled for tomorrow at 10:00 AM in the conference room","metadata":{}},{"cell_type":"code","source":"#Taking user input mail \n\ninput_mail=[input(\"Enter a Mail : \")]\n\n# Convert the text into feature vectors\n\ninput_data_feature=feature_extraction.transform(input_mail)\n\n# Making Predictions\n\nprediction = model.predict(input_data_feature)\nprint(prediction)\n\nif (prediction[0]== 1):\n    print(\"Ham Mail\")\nelse:\n    print(\"Spam Mail\")","metadata":{"trusted":true,"execution":{"iopub.status.busy":"2024-12-10T17:31:48.384643Z","iopub.execute_input":"2024-12-10T17:31:48.385049Z","iopub.status.idle":"2024-12-10T17:31:59.805269Z","shell.execute_reply.started":"2024-12-10T17:31:48.385016Z","shell.execute_reply":"2024-12-10T17:31:59.803817Z"}},"outputs":[{"output_type":"stream","name":"stdin","text":"Enter a Mail :  Free ,offer to win a free gift subscribe it soon to avail the offer\n"},{"name":"stdout","text":"[0]\nSpam Mail\n","output_type":"stream"}],"execution_count":22}]}
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "id": "5c36ffad",
+   "metadata": {
+    "papermill": {
+     "duration": 0.007047,
+     "end_time": "2024-12-10T17:37:34.327628",
+     "exception": false,
+     "start_time": "2024-12-10T17:37:34.320581",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "**Importing Dependencies**"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "id": "60148abb",
+   "metadata": {
+    "_cell_guid": "b1076dfc-b9ad-4769-8c92-a6c4dae69d19",
+    "_uuid": "8f2839f25d086af736a60e9eeb907d3b93b6e0e5",
+    "execution": {
+     "iopub.execute_input": "2024-12-10T17:37:34.341183Z",
+     "iopub.status.busy": "2024-12-10T17:37:34.340805Z",
+     "iopub.status.idle": "2024-12-10T17:37:36.738219Z",
+     "shell.execute_reply": "2024-12-10T17:37:36.737126Z"
+    },
+    "papermill": {
+     "duration": 2.406759,
+     "end_time": "2024-12-10T17:37:36.740770",
+     "exception": false,
+     "start_time": "2024-12-10T17:37:34.334011",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "import numpy as np\n",
+    "import pandas as pd\n",
+    "from sklearn.model_selection import train_test_split\n",
+    "from sklearn.feature_extraction.text import TfidfVectorizer\n",
+    "from sklearn.linear_model import LogisticRegression\n",
+    "from sklearn.metrics import accuracy_score"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "269c3c4b",
+   "metadata": {
+    "papermill": {
+     "duration": 0.007011,
+     "end_time": "2024-12-10T17:37:36.753877",
+     "exception": false,
+     "start_time": "2024-12-10T17:37:36.746866",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "**Data Collection and Pre-processing**"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "id": "ee199b56",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-12-10T17:37:36.768111Z",
+     "iopub.status.busy": "2024-12-10T17:37:36.767619Z",
+     "iopub.status.idle": "2024-12-10T17:37:36.807467Z",
+     "shell.execute_reply": "2024-12-10T17:37:36.806343Z"
+    },
+    "papermill": {
+     "duration": 0.049842,
+     "end_time": "2024-12-10T17:37:36.809854",
+     "exception": false,
+     "start_time": "2024-12-10T17:37:36.760012",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "# Loading the data from csv to pandas dataframe\n",
+    "data=pd.read_csv('/kaggle/input/mails-dataset-spam-ham/mail_data.csv')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "id": "a190a21b",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-12-10T17:37:36.823006Z",
+     "iopub.status.busy": "2024-12-10T17:37:36.822615Z",
+     "iopub.status.idle": "2024-12-10T17:37:36.844129Z",
+     "shell.execute_reply": "2024-12-10T17:37:36.843045Z"
+    },
+    "papermill": {
+     "duration": 0.030867,
+     "end_time": "2024-12-10T17:37:36.846475",
+     "exception": false,
+     "start_time": "2024-12-10T17:37:36.815608",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>Category</th>\n",
+       "      <th>Message</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>ham</td>\n",
+       "      <td>Go until jurong point, crazy.. Available only ...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>ham</td>\n",
+       "      <td>Ok lar... Joking wif u oni...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>spam</td>\n",
+       "      <td>Free entry in 2 a wkly comp to win FA Cup fina...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>ham</td>\n",
+       "      <td>U dun say so early hor... U c already then say...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>ham</td>\n",
+       "      <td>Nah I don't think he goes to usf, he lives aro...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>...</th>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>5567</th>\n",
+       "      <td>spam</td>\n",
+       "      <td>This is the 2nd time we have tried 2 contact u...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>5568</th>\n",
+       "      <td>ham</td>\n",
+       "      <td>Will ü b going to esplanade fr home?</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>5569</th>\n",
+       "      <td>ham</td>\n",
+       "      <td>Pity, * was in mood for that. So...any other s...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>5570</th>\n",
+       "      <td>ham</td>\n",
+       "      <td>The guy did some bitching but I acted like i'd...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>5571</th>\n",
+       "      <td>ham</td>\n",
+       "      <td>Rofl. Its true to its name</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "<p>5572 rows × 2 columns</p>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "     Category                                            Message\n",
+       "0         ham  Go until jurong point, crazy.. Available only ...\n",
+       "1         ham                      Ok lar... Joking wif u oni...\n",
+       "2        spam  Free entry in 2 a wkly comp to win FA Cup fina...\n",
+       "3         ham  U dun say so early hor... U c already then say...\n",
+       "4         ham  Nah I don't think he goes to usf, he lives aro...\n",
+       "...       ...                                                ...\n",
+       "5567     spam  This is the 2nd time we have tried 2 contact u...\n",
+       "5568      ham               Will ü b going to esplanade fr home?\n",
+       "5569      ham  Pity, * was in mood for that. So...any other s...\n",
+       "5570      ham  The guy did some bitching but I acted like i'd...\n",
+       "5571      ham                         Rofl. Its true to its name\n",
+       "\n",
+       "[5572 rows x 2 columns]"
+      ]
+     },
+     "execution_count": 3,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "data"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "id": "ad8f3039",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-12-10T17:37:36.861079Z",
+     "iopub.status.busy": "2024-12-10T17:37:36.860674Z",
+     "iopub.status.idle": "2024-12-10T17:37:36.869266Z",
+     "shell.execute_reply": "2024-12-10T17:37:36.868387Z"
+    },
+    "papermill": {
+     "duration": 0.018027,
+     "end_time": "2024-12-10T17:37:36.871386",
+     "exception": false,
+     "start_time": "2024-12-10T17:37:36.853359",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "# Replace the null values with a null string\n",
+    "mail_data=data.where((pd.notnull(data)),'')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "id": "e8494c78",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-12-10T17:37:36.885165Z",
+     "iopub.status.busy": "2024-12-10T17:37:36.884780Z",
+     "iopub.status.idle": "2024-12-10T17:37:36.894323Z",
+     "shell.execute_reply": "2024-12-10T17:37:36.893245Z"
+    },
+    "papermill": {
+     "duration": 0.018965,
+     "end_time": "2024-12-10T17:37:36.896432",
+     "exception": false,
+     "start_time": "2024-12-10T17:37:36.877467",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>Category</th>\n",
+       "      <th>Message</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>ham</td>\n",
+       "      <td>Go until jurong point, crazy.. Available only ...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>ham</td>\n",
+       "      <td>Ok lar... Joking wif u oni...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>spam</td>\n",
+       "      <td>Free entry in 2 a wkly comp to win FA Cup fina...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>ham</td>\n",
+       "      <td>U dun say so early hor... U c already then say...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>ham</td>\n",
+       "      <td>Nah I don't think he goes to usf, he lives aro...</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "  Category                                            Message\n",
+       "0      ham  Go until jurong point, crazy.. Available only ...\n",
+       "1      ham                      Ok lar... Joking wif u oni...\n",
+       "2     spam  Free entry in 2 a wkly comp to win FA Cup fina...\n",
+       "3      ham  U dun say so early hor... U c already then say...\n",
+       "4      ham  Nah I don't think he goes to usf, he lives aro..."
+      ]
+     },
+     "execution_count": 5,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "#Printing the first 5 rows of the dataframe\n",
+    "mail_data.head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "id": "a13db38b",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-12-10T17:37:36.910652Z",
+     "iopub.status.busy": "2024-12-10T17:37:36.910229Z",
+     "iopub.status.idle": "2024-12-10T17:37:36.916879Z",
+     "shell.execute_reply": "2024-12-10T17:37:36.915721Z"
+    },
+    "papermill": {
+     "duration": 0.016047,
+     "end_time": "2024-12-10T17:37:36.918914",
+     "exception": false,
+     "start_time": "2024-12-10T17:37:36.902867",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "(5572, 2)"
+      ]
+     },
+     "execution_count": 6,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# Checking the number of rows and columns in the dataframe\n",
+    "mail_data.shape"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "3a5173a7",
+   "metadata": {
+    "papermill": {
+     "duration": 0.005922,
+     "end_time": "2024-12-10T17:37:36.931090",
+     "exception": false,
+     "start_time": "2024-12-10T17:37:36.925168",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "**Label Encoding**"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "id": "859c9722",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-12-10T17:37:36.945146Z",
+     "iopub.status.busy": "2024-12-10T17:37:36.944760Z",
+     "iopub.status.idle": "2024-12-10T17:37:36.953100Z",
+     "shell.execute_reply": "2024-12-10T17:37:36.952070Z"
+    },
+    "papermill": {
+     "duration": 0.018061,
+     "end_time": "2024-12-10T17:37:36.955316",
+     "exception": false,
+     "start_time": "2024-12-10T17:37:36.937255",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "# Label spam mail as 0 ; Ham mail as 1;\n",
+    "mail_data.loc[mail_data['Category'] == 'spam','Category']= 0\n",
+    "mail_data.loc[mail_data['Category'] == 'ham', 'Category']= 1"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 8,
+   "id": "b51331f2",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-12-10T17:37:36.970124Z",
+     "iopub.status.busy": "2024-12-10T17:37:36.969735Z",
+     "iopub.status.idle": "2024-12-10T17:37:36.979333Z",
+     "shell.execute_reply": "2024-12-10T17:37:36.978200Z"
+    },
+    "papermill": {
+     "duration": 0.019684,
+     "end_time": "2024-12-10T17:37:36.981522",
+     "exception": false,
+     "start_time": "2024-12-10T17:37:36.961838",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>Category</th>\n",
+       "      <th>Message</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>1</td>\n",
+       "      <td>Go until jurong point, crazy.. Available only ...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>1</td>\n",
+       "      <td>Ok lar... Joking wif u oni...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>0</td>\n",
+       "      <td>Free entry in 2 a wkly comp to win FA Cup fina...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>1</td>\n",
+       "      <td>U dun say so early hor... U c already then say...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>1</td>\n",
+       "      <td>Nah I don't think he goes to usf, he lives aro...</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "  Category                                            Message\n",
+       "0        1  Go until jurong point, crazy.. Available only ...\n",
+       "1        1                      Ok lar... Joking wif u oni...\n",
+       "2        0  Free entry in 2 a wkly comp to win FA Cup fina...\n",
+       "3        1  U dun say so early hor... U c already then say...\n",
+       "4        1  Nah I don't think he goes to usf, he lives aro..."
+      ]
+     },
+     "execution_count": 8,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "mail_data.head()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "8ee417cb",
+   "metadata": {
+    "papermill": {
+     "duration": 0.006213,
+     "end_time": "2024-12-10T17:37:36.994131",
+     "exception": false,
+     "start_time": "2024-12-10T17:37:36.987918",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "Spam - 0\n",
+    "\n",
+    "Ham - 1"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 9,
+   "id": "2b66da57",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-12-10T17:37:37.008549Z",
+     "iopub.status.busy": "2024-12-10T17:37:37.008133Z",
+     "iopub.status.idle": "2024-12-10T17:37:37.013361Z",
+     "shell.execute_reply": "2024-12-10T17:37:37.012213Z"
+    },
+    "papermill": {
+     "duration": 0.015173,
+     "end_time": "2024-12-10T17:37:37.015795",
+     "exception": false,
+     "start_time": "2024-12-10T17:37:37.000622",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "# Separating the data as texts and labels \n",
+    "X= mail_data['Message']\n",
+    "Y= mail_data['Category']"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 10,
+   "id": "0be4f7a1",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-12-10T17:37:37.030916Z",
+     "iopub.status.busy": "2024-12-10T17:37:37.030536Z",
+     "iopub.status.idle": "2024-12-10T17:37:37.038021Z",
+     "shell.execute_reply": "2024-12-10T17:37:37.036927Z"
+    },
+    "papermill": {
+     "duration": 0.018108,
+     "end_time": "2024-12-10T17:37:37.040357",
+     "exception": false,
+     "start_time": "2024-12-10T17:37:37.022249",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "0       Go until jurong point, crazy.. Available only ...\n",
+      "1                           Ok lar... Joking wif u oni...\n",
+      "2       Free entry in 2 a wkly comp to win FA Cup fina...\n",
+      "3       U dun say so early hor... U c already then say...\n",
+      "4       Nah I don't think he goes to usf, he lives aro...\n",
+      "                              ...                        \n",
+      "5567    This is the 2nd time we have tried 2 contact u...\n",
+      "5568                 Will ü b going to esplanade fr home?\n",
+      "5569    Pity, * was in mood for that. So...any other s...\n",
+      "5570    The guy did some bitching but I acted like i'd...\n",
+      "5571                           Rofl. Its true to its name\n",
+      "Name: Message, Length: 5572, dtype: object\n"
+     ]
+    }
+   ],
+   "source": [
+    "print(X)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 11,
+   "id": "aa8c4f16",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-12-10T17:37:37.054954Z",
+     "iopub.status.busy": "2024-12-10T17:37:37.054549Z",
+     "iopub.status.idle": "2024-12-10T17:37:37.061381Z",
+     "shell.execute_reply": "2024-12-10T17:37:37.060295Z"
+    },
+    "papermill": {
+     "duration": 0.017115,
+     "end_time": "2024-12-10T17:37:37.063978",
+     "exception": false,
+     "start_time": "2024-12-10T17:37:37.046863",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "0       1\n",
+      "1       1\n",
+      "2       0\n",
+      "3       1\n",
+      "4       1\n",
+      "       ..\n",
+      "5567    0\n",
+      "5568    1\n",
+      "5569    1\n",
+      "5570    1\n",
+      "5571    1\n",
+      "Name: Category, Length: 5572, dtype: object\n"
+     ]
+    }
+   ],
+   "source": [
+    "print(Y)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "1a10f127",
+   "metadata": {
+    "papermill": {
+     "duration": 0.006135,
+     "end_time": "2024-12-10T17:37:37.077728",
+     "exception": false,
+     "start_time": "2024-12-10T17:37:37.071593",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "**Splitting the data into training data and testing data**"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 12,
+   "id": "632bbebb",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-12-10T17:37:37.093324Z",
+     "iopub.status.busy": "2024-12-10T17:37:37.092273Z",
+     "iopub.status.idle": "2024-12-10T17:37:37.102501Z",
+     "shell.execute_reply": "2024-12-10T17:37:37.101427Z"
+    },
+    "papermill": {
+     "duration": 0.020759,
+     "end_time": "2024-12-10T17:37:37.104892",
+     "exception": false,
+     "start_time": "2024-12-10T17:37:37.084133",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "X_train,X_test,Y_train,Y_test=train_test_split(X, Y,test_size=0.2 , random_state=3)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 13,
+   "id": "248f41d2",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-12-10T17:37:37.119202Z",
+     "iopub.status.busy": "2024-12-10T17:37:37.118859Z",
+     "iopub.status.idle": "2024-12-10T17:37:37.124678Z",
+     "shell.execute_reply": "2024-12-10T17:37:37.123357Z"
+    },
+    "papermill": {
+     "duration": 0.015636,
+     "end_time": "2024-12-10T17:37:37.127015",
+     "exception": false,
+     "start_time": "2024-12-10T17:37:37.111379",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "(5572,)\n",
+      "(4457,)\n",
+      "(1115,)\n"
+     ]
+    }
+   ],
+   "source": [
+    "print(X.shape)\n",
+    "print(X_train.shape)\n",
+    "print(X_test.shape)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "c732c0fa",
+   "metadata": {
+    "papermill": {
+     "duration": 0.006145,
+     "end_time": "2024-12-10T17:37:37.139822",
+     "exception": false,
+     "start_time": "2024-12-10T17:37:37.133677",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "**Feature Extraction**"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 14,
+   "id": "51523bad",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-12-10T17:37:37.154338Z",
+     "iopub.status.busy": "2024-12-10T17:37:37.153955Z",
+     "iopub.status.idle": "2024-12-10T17:37:37.273048Z",
+     "shell.execute_reply": "2024-12-10T17:37:37.272130Z"
+    },
+    "papermill": {
+     "duration": 0.129324,
+     "end_time": "2024-12-10T17:37:37.275465",
+     "exception": false,
+     "start_time": "2024-12-10T17:37:37.146141",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "# Transform the text data to feature vectors that can be used as an input to the Logistic Regression Model\n",
+    "feature_extraction=TfidfVectorizer(min_df = 1, stop_words='english', lowercase=True)\n",
+    "\n",
+    "X_train_feature = feature_extraction.fit_transform(X_train)\n",
+    "X_test_feature = feature_extraction.transform(X_test)\n",
+    "\n",
+    "# Convert the Y_train and Y_test values to integers\n",
+    "\n",
+    "Y_train=Y_train.astype('int')\n",
+    "Y_test=Y_test.astype('int')"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "4562142f",
+   "metadata": {
+    "papermill": {
+     "duration": 0.006005,
+     "end_time": "2024-12-10T17:37:37.287863",
+     "exception": false,
+     "start_time": "2024-12-10T17:37:37.281858",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "**Training the Model**\n",
+    "\n",
+    "**Logistic Regression**"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 15,
+   "id": "bb23e2bb",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-12-10T17:37:37.302011Z",
+     "iopub.status.busy": "2024-12-10T17:37:37.301652Z",
+     "iopub.status.idle": "2024-12-10T17:37:37.306621Z",
+     "shell.execute_reply": "2024-12-10T17:37:37.305547Z"
+    },
+    "papermill": {
+     "duration": 0.014583,
+     "end_time": "2024-12-10T17:37:37.308759",
+     "exception": false,
+     "start_time": "2024-12-10T17:37:37.294176",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "model=LogisticRegression()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 16,
+   "id": "332a3411",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-12-10T17:37:37.323824Z",
+     "iopub.status.busy": "2024-12-10T17:37:37.323387Z",
+     "iopub.status.idle": "2024-12-10T17:37:37.383275Z",
+     "shell.execute_reply": "2024-12-10T17:37:37.382248Z"
+    },
+    "papermill": {
+     "duration": 0.070105,
+     "end_time": "2024-12-10T17:37:37.385427",
+     "exception": false,
+     "start_time": "2024-12-10T17:37:37.315322",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<style>#sk-container-id-1 {color: black;background-color: white;}#sk-container-id-1 pre{padding: 0;}#sk-container-id-1 div.sk-toggleable {background-color: white;}#sk-container-id-1 label.sk-toggleable__label {cursor: pointer;display: block;width: 100%;margin-bottom: 0;padding: 0.3em;box-sizing: border-box;text-align: center;}#sk-container-id-1 label.sk-toggleable__label-arrow:before {content: \"▸\";float: left;margin-right: 0.25em;color: #696969;}#sk-container-id-1 label.sk-toggleable__label-arrow:hover:before {color: black;}#sk-container-id-1 div.sk-estimator:hover label.sk-toggleable__label-arrow:before {color: black;}#sk-container-id-1 div.sk-toggleable__content {max-height: 0;max-width: 0;overflow: hidden;text-align: left;background-color: #f0f8ff;}#sk-container-id-1 div.sk-toggleable__content pre {margin: 0.2em;color: black;border-radius: 0.25em;background-color: #f0f8ff;}#sk-container-id-1 input.sk-toggleable__control:checked~div.sk-toggleable__content {max-height: 200px;max-width: 100%;overflow: auto;}#sk-container-id-1 input.sk-toggleable__control:checked~label.sk-toggleable__label-arrow:before {content: \"▾\";}#sk-container-id-1 div.sk-estimator input.sk-toggleable__control:checked~label.sk-toggleable__label {background-color: #d4ebff;}#sk-container-id-1 div.sk-label input.sk-toggleable__control:checked~label.sk-toggleable__label {background-color: #d4ebff;}#sk-container-id-1 input.sk-hidden--visually {border: 0;clip: rect(1px 1px 1px 1px);clip: rect(1px, 1px, 1px, 1px);height: 1px;margin: -1px;overflow: hidden;padding: 0;position: absolute;width: 1px;}#sk-container-id-1 div.sk-estimator {font-family: monospace;background-color: #f0f8ff;border: 1px dotted black;border-radius: 0.25em;box-sizing: border-box;margin-bottom: 0.5em;}#sk-container-id-1 div.sk-estimator:hover {background-color: #d4ebff;}#sk-container-id-1 div.sk-parallel-item::after {content: \"\";width: 100%;border-bottom: 1px solid gray;flex-grow: 1;}#sk-container-id-1 div.sk-label:hover label.sk-toggleable__label {background-color: #d4ebff;}#sk-container-id-1 div.sk-serial::before {content: \"\";position: absolute;border-left: 1px solid gray;box-sizing: border-box;top: 0;bottom: 0;left: 50%;z-index: 0;}#sk-container-id-1 div.sk-serial {display: flex;flex-direction: column;align-items: center;background-color: white;padding-right: 0.2em;padding-left: 0.2em;position: relative;}#sk-container-id-1 div.sk-item {position: relative;z-index: 1;}#sk-container-id-1 div.sk-parallel {display: flex;align-items: stretch;justify-content: center;background-color: white;position: relative;}#sk-container-id-1 div.sk-item::before, #sk-container-id-1 div.sk-parallel-item::before {content: \"\";position: absolute;border-left: 1px solid gray;box-sizing: border-box;top: 0;bottom: 0;left: 50%;z-index: -1;}#sk-container-id-1 div.sk-parallel-item {display: flex;flex-direction: column;z-index: 1;position: relative;background-color: white;}#sk-container-id-1 div.sk-parallel-item:first-child::after {align-self: flex-end;width: 50%;}#sk-container-id-1 div.sk-parallel-item:last-child::after {align-self: flex-start;width: 50%;}#sk-container-id-1 div.sk-parallel-item:only-child::after {width: 0;}#sk-container-id-1 div.sk-dashed-wrapped {border: 1px dashed gray;margin: 0 0.4em 0.5em 0.4em;box-sizing: border-box;padding-bottom: 0.4em;background-color: white;}#sk-container-id-1 div.sk-label label {font-family: monospace;font-weight: bold;display: inline-block;line-height: 1.2em;}#sk-container-id-1 div.sk-label-container {text-align: center;}#sk-container-id-1 div.sk-container {/* jupyter's `normalize.less` sets `[hidden] { display: none; }` but bootstrap.min.css set `[hidden] { display: none !important; }` so we also need the `!important` here to be able to override the default hidden behavior on the sphinx rendered scikit-learn.org. See: https://github.com/scikit-learn/scikit-learn/issues/21755 */display: inline-block !important;position: relative;}#sk-container-id-1 div.sk-text-repr-fallback {display: none;}</style><div id=\"sk-container-id-1\" class=\"sk-top-container\"><div class=\"sk-text-repr-fallback\"><pre>LogisticRegression()</pre><b>In a Jupyter environment, please rerun this cell to show the HTML representation or trust the notebook. <br />On GitHub, the HTML representation is unable to render, please try loading this page with nbviewer.org.</b></div><div class=\"sk-container\" hidden><div class=\"sk-item\"><div class=\"sk-estimator sk-toggleable\"><input class=\"sk-toggleable__control sk-hidden--visually\" id=\"sk-estimator-id-1\" type=\"checkbox\" checked><label for=\"sk-estimator-id-1\" class=\"sk-toggleable__label sk-toggleable__label-arrow\">LogisticRegression</label><div class=\"sk-toggleable__content\"><pre>LogisticRegression()</pre></div></div></div></div></div>"
+      ],
+      "text/plain": [
+       "LogisticRegression()"
+      ]
+     },
+     "execution_count": 16,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# Training the Logistic Regression model with the training data \n",
+    "model.fit(X_train_feature,Y_train)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "ce20e189",
+   "metadata": {
+    "papermill": {
+     "duration": 0.006341,
+     "end_time": "2024-12-10T17:37:37.398650",
+     "exception": false,
+     "start_time": "2024-12-10T17:37:37.392309",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "**Evaluating the Trained Model**"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 17,
+   "id": "5bc3a458",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-12-10T17:37:37.413376Z",
+     "iopub.status.busy": "2024-12-10T17:37:37.413004Z",
+     "iopub.status.idle": "2024-12-10T17:37:37.419953Z",
+     "shell.execute_reply": "2024-12-10T17:37:37.418924Z"
+    },
+    "papermill": {
+     "duration": 0.016844,
+     "end_time": "2024-12-10T17:37:37.422124",
+     "exception": false,
+     "start_time": "2024-12-10T17:37:37.405280",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "# Prediction on the training data \n",
+    "prediction_traindata=model.predict(X_train_feature)\n",
+    "\n",
+    "accuracy_traindata=accuracy_score(Y_train,prediction_traindata)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 18,
+   "id": "a950ac5e",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-12-10T17:37:37.437138Z",
+     "iopub.status.busy": "2024-12-10T17:37:37.436770Z",
+     "iopub.status.idle": "2024-12-10T17:37:37.441718Z",
+     "shell.execute_reply": "2024-12-10T17:37:37.440732Z"
+    },
+    "papermill": {
+     "duration": 0.015133,
+     "end_time": "2024-12-10T17:37:37.443952",
+     "exception": false,
+     "start_time": "2024-12-10T17:37:37.428819",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Accuracy of the training data  0.9670181736594121\n"
+     ]
+    }
+   ],
+   "source": [
+    "print(\"Accuracy of the training data \",accuracy_traindata)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 19,
+   "id": "e1e44965",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-12-10T17:37:37.460016Z",
+     "iopub.status.busy": "2024-12-10T17:37:37.459629Z",
+     "iopub.status.idle": "2024-12-10T17:37:37.466351Z",
+     "shell.execute_reply": "2024-12-10T17:37:37.465495Z"
+    },
+    "papermill": {
+     "duration": 0.017464,
+     "end_time": "2024-12-10T17:37:37.468261",
+     "exception": false,
+     "start_time": "2024-12-10T17:37:37.450797",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "# Prediction on the testing data \n",
+    "prediction_testdata=model.predict(X_test_feature)\n",
+    "\n",
+    "accuracy_testdata=accuracy_score(Y_test,prediction_testdata)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 20,
+   "id": "e07578cd",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-12-10T17:37:37.483951Z",
+     "iopub.status.busy": "2024-12-10T17:37:37.483057Z",
+     "iopub.status.idle": "2024-12-10T17:37:37.488293Z",
+     "shell.execute_reply": "2024-12-10T17:37:37.487299Z"
+    },
+    "papermill": {
+     "duration": 0.015525,
+     "end_time": "2024-12-10T17:37:37.490749",
+     "exception": false,
+     "start_time": "2024-12-10T17:37:37.475224",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Accuracy of the testing data  0.9659192825112107\n"
+     ]
+    }
+   ],
+   "source": [
+    "print(\"Accuracy of the testing data \",accuracy_testdata)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "29ce6cf3",
+   "metadata": {
+    "papermill": {
+     "duration": 0.006463,
+     "end_time": "2024-12-10T17:37:37.504214",
+     "exception": false,
+     "start_time": "2024-12-10T17:37:37.497751",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "**Building a Predictive System**"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 21,
+   "id": "cd62b8a4",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-12-10T17:37:37.519968Z",
+     "iopub.status.busy": "2024-12-10T17:37:37.519197Z",
+     "iopub.status.idle": "2024-12-10T17:37:37.527241Z",
+     "shell.execute_reply": "2024-12-10T17:37:37.525991Z"
+    },
+    "papermill": {
+     "duration": 0.017867,
+     "end_time": "2024-12-10T17:37:37.529210",
+     "exception": false,
+     "start_time": "2024-12-10T17:37:37.511343",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "[0]\n",
+      "Spam Mail\n"
+     ]
+    }
+   ],
+   "source": [
+    " input_mail=[\"Free ,offer to win a free gift subscribe it soon to avail the offer\"]\n",
+    "\n",
+    "# Convert the text into feature vectors\n",
+    "\n",
+    "input_data_feature=feature_extraction.transform(input_mail)\n",
+    "\n",
+    "# Making Predictions\n",
+    "\n",
+    "prediction = model.predict(input_data_feature)\n",
+    "print(prediction)\n",
+    "\n",
+    "if (prediction[0]== 1):\n",
+    "    print(\"Ham Mail\")\n",
+    "else:\n",
+    "    print(\"Spam Mail\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "02890a11",
+   "metadata": {
+    "papermill": {
+     "duration": 0.006519,
+     "end_time": "2024-12-10T17:37:37.542760",
+     "exception": false,
+     "start_time": "2024-12-10T17:37:37.536241",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "**Prediction based on user input**\n",
+    "\n",
+    "* **Spam :** Free ,offer to win a free gift subscribe it soon to avail the offer\n",
+    "\n",
+    "* **Ham:** This is a friendly reminder about our team meeting scheduled for tomorrow at 10:00 AM in the conference room"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 22,
+   "id": "e2443245",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-12-10T17:37:37.558344Z",
+     "iopub.status.busy": "2024-12-10T17:37:37.557442Z",
+     "iopub.status.idle": "2024-12-10T17:37:37.565331Z",
+     "shell.execute_reply": "2024-12-10T17:37:37.564148Z"
+    },
+    "papermill": {
+     "duration": 0.018022,
+     "end_time": "2024-12-10T17:37:37.567471",
+     "exception": false,
+     "start_time": "2024-12-10T17:37:37.549449",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "[0]\n",
+      "Spam Mail\n"
+     ]
+    }
+   ],
+   "source": [
+    "#Taking user input mail \n",
+    "\n",
+    "#input_mail=[input(\"Enter a Mail : \")]\n",
+    "\n",
+    "# Convert the text into feature vectors\n",
+    "\n",
+    "input_data_feature=feature_extraction.transform(input_mail)\n",
+    "\n",
+    "# Making Predictions\n",
+    "\n",
+    "prediction = model.predict(input_data_feature)\n",
+    "print(prediction)\n",
+    "\n",
+    "if (prediction[0]== 1):\n",
+    "    print(\"Ham Mail\")\n",
+    "else:\n",
+    "    print(\"Spam Mail\")"
+   ]
+  }
+ ],
+ "metadata": {
+  "kaggle": {
+   "accelerator": "none",
+   "dataSources": [
+    {
+     "datasetId": 6264721,
+     "sourceId": 10148397,
+     "sourceType": "datasetVersion"
+    }
+   ],
+   "dockerImageVersionId": 30804,
+   "isGpuEnabled": false,
+   "isInternetEnabled": true,
+   "language": "python",
+   "sourceType": "notebook"
+  },
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.10.14"
+  },
+  "papermill": {
+   "default_parameters": {},
+   "duration": 6.515973,
+   "end_time": "2024-12-10T17:37:38.194950",
+   "environment_variables": {},
+   "exception": null,
+   "input_path": "__notebook__.ipynb",
+   "output_path": "__notebook__.ipynb",
+   "parameters": {},
+   "start_time": "2024-12-10T17:37:31.678977",
+   "version": "2.6.0"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}
